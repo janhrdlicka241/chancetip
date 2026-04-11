@@ -284,7 +284,8 @@
     <div class="section" id="adminSection">
       <div class="admin-card">
         <h3>⚙️ Zadání výsledků</h3>
-        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px">Po uložení se automaticky vyhodnotí tipy všech hráčů a přidají se peníze do jackpotu.</p>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Výsledky se načítají automaticky každých 5 minut. Nebo klikni na tlačítko pro okamžitou aktualizaci.</p>
+        <button class="btn btn-secondary btn-sm" onclick="fetchLiveResults()" style="margin-bottom:16px">🔄 Načíst živé výsledky</button>
         <div id="adminMatchList"><div class="loading-text">Načítám…</div></div>
       </div>
       <div class="admin-card">
@@ -449,7 +450,65 @@ function subscribeAll() {
   }));
 }
 
-// ── MATCHES ──────────────────────────────────────────
+// ── LIVE VÝSLEDKY Z API ──────────────────────────────
+const RAPIDAPI_KEY  = "2d20469f85mshd4dafb41662acb4p119880jsnad51d1b3b4d1";
+const RAPIDAPI_HOST = "free-api-live-football-data.p.rapidapi.com";
+const CHANCE_LIGA_ID = "220";
+
+async function fetchLiveResults() {
+  if (currentNick?.toLowerCase() !== ADMIN_NICK) return;
+  try {
+    const res = await fetch("https://free-api-live-football-data.p.rapidapi.com/football-current-live", {
+      headers: {
+        "x-rapidapi-key":  RAPIDAPI_KEY,
+        "x-rapidapi-host": RAPIDAPI_HOST,
+        "Content-Type": "application/json"
+      }
+    });
+    if (!res.ok) { toast(`API chyba: ${res.status}`, 'error'); return; }
+    const data = await res.json();
+    const fixtures = data?.response || data?.matches || data?.data || data?.events || [];
+    if (!fixtures.length) { toast('Žádné živé zápasy', 'success'); return; }
+
+    let updated = 0;
+    for (const m of allMatches) {
+      const homeLast = m.home.split(" ").pop().toLowerCase();
+      const awayLast = m.away.split(" ").pop().toLowerCase();
+      const match = fixtures.find(f => {
+        const h = (f.teams?.home?.name || f.homeTeam?.name || f.home_team || "").toLowerCase();
+        const a = (f.teams?.away?.name || f.awayTeam?.name || f.away_team || "").toLowerCase();
+        return h.includes(homeLast) && a.includes(awayLast);
+      });
+      if (!match) continue;
+
+      const hs = match.goals?.home ?? match.score?.home ?? match.homeScore ?? null;
+      const as = match.goals?.away ?? match.score?.away ?? match.awayScore ?? null;
+      const statusCode = match.fixture?.status?.short || match.status?.code || match.status || "";
+      const isLive = ["1H","HT","2H","ET","P","LIVE","IN_PLAY"].includes(String(statusCode).toUpperCase());
+      const isDone = ["FT","AET","PEN","FINISHED"].includes(String(statusCode).toUpperCase());
+      const newStatus = isDone ? "finished" : isLive ? "live" : "upcoming";
+
+      const dbMatch = allMatches.find(x => x.id === m.id);
+      if (dbMatch && (dbMatch.homeScore !== hs || dbMatch.awayScore !== as || dbMatch.status !== newStatus)) {
+        await updateDoc(doc(db,'matches', m.id), { homeScore:hs, awayScore:as, status:newStatus });
+        if (newStatus === 'finished' && dbMatch.status !== 'finished' && hs !== null && as !== null) {
+          await evaluateTips(m.id, hs, as);
+        }
+        updated++;
+      }
+    }
+    toast(`Výsledky aktualizovány ✅ (${updated} změn)`, 'success');
+  } catch(e) {
+    console.error('API chyba:', e);
+    toast('Chyba při načítání výsledků', 'error');
+  }
+}
+
+window.fetchLiveResults = fetchLiveResults;
+
+setInterval(() => {
+  if (currentNick?.toLowerCase() === ADMIN_NICK) fetchLiveResults();
+}, 5 * 60 * 1000);
 function renderMatches() {
   const container = document.getElementById('matchesList');
   let list = [...allMatches];
