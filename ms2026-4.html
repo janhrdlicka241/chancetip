@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chance Liga Tipovačka ⚽</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --border:#1e2d45;
+    --accent:#f59e0b; --accent2:#10b981; --red:#ef4444;
+    --text:#e2e8f0; --muted:#64748b; --gold:#fbbf24;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 50%,rgba(245,158,11,.04) 0%,transparent 60%),
+      radial-gradient(ellipse at 80% 20%,rgba(16,185,129,.04) 0%,transparent 50%);
+  }
+
+  /* AUTH */
+  #authSection {
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:20px;
+  }
+  .auth-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:36px; width:100%; max-width:400px; text-align:center;
+  }
+  .auth-box h2 { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:2px; color:var(--accent); margin-bottom:4px; }
+  .auth-box p { color:var(--muted); font-size:0.9rem; margin-bottom:24px; }
+
+  /* HEADER */
+  header { background:linear-gradient(135deg,#0f1829,#111827); border-bottom:1px solid var(--border); padding:0 20px; position:sticky; top:0; z-index:100; }
+  .header-inner { max-width:900px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:60px; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:2px; color:var(--accent); display:flex; align-items:center; gap:8px; }
+  .logo span { color:var(--text); }
+  #userInfo { font-size:0.85rem; color:var(--muted); }
+  #userInfo strong { color:var(--text); }
+  .header-right { display:flex; align-items:center; gap:12px; }
+
+  /* WINNER BANNER */
+  #winnerBanner { display:none; background:linear-gradient(135deg,#14532d,#166534); border:1px solid #16a34a; border-radius:12px; padding:14px 20px; margin-bottom:16px; align-items:center; gap:12px; }
+  #winnerBanner.show { display:flex; animation:fadeIn .4s ease; }
+  .winner-icon { font-size:1.8rem; }
+  .winner-text { font-size:0.9rem; color:#86efac; }
+  .winner-text strong { color:#fff; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* JACKPOT */
+  .jackpot-banner { background:linear-gradient(135deg,#1a1200,#261a00); border:1px solid #3d2c00; border-radius:12px; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; position:relative; overflow:hidden; }
+  .jackpot-banner::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(251,191,36,.05),transparent); animation:shimmer 3s infinite; }
+  @keyframes shimmer { 0%,100%{transform:translateX(-100%)} 50%{transform:translateX(100%)} }
+  .jackpot-label { font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .jackpot-amount { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; color:var(--gold); line-height:1; }
+  .jackpot-sub { font-size:0.8rem; color:#a16207; margin-top:2px; }
+  .jackpot-icon { font-size:2.5rem; opacity:.6; }
+
+  /* TABS */
+  .tabs { display:flex; gap:4px; background:var(--surface); border-radius:10px; padding:4px; margin-bottom:24px; }
+  .tab-btn { flex:1; padding:9px 12px; border:none; cursor:pointer; border-radius:7px; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; background:transparent; color:var(--muted); transition:all .2s; }
+  .tab-btn.active { background:var(--surface2); color:var(--text); }
+
+  main { max-width:900px; margin:0 auto; padding:20px; }
+  .section { display:none; }
+  .section.active { display:block; }
+
+  /* MATCH CARD */
+  .matches-grid { display:flex; flex-direction:column; gap:12px; }
+  .match-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 20px; transition:border-color .2s; }
+  .match-card:hover { border-color:#2a3f5f; }
+  .match-card.has-tip { border-color:rgba(16,185,129,.35); }
+  .match-card.finished { opacity:.85; }
+  .match-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .match-date { font-size:0.75rem; color:var(--muted); }
+  .match-group { font-size:0.7rem; font-weight:600; background:var(--surface2); color:var(--accent); padding:2px 8px; border-radius:20px; letter-spacing:.5px; }
+  .match-status-badge { font-size:0.7rem; padding:2px 8px; border-radius:20px; font-weight:600; }
+  .status-live { background:rgba(239,68,68,.2); color:#f87171; animation:pulse 1.5s infinite; }
+  .status-finished { background:rgba(100,116,139,.2); color:var(--muted); }
+  .status-upcoming { background:rgba(245,158,11,.15); color:var(--accent); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  .match-teams { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:14px; }
+  .team-name { font-weight:600; font-size:1rem; }
+  .team-home { text-align:right; }
+  .team-away { text-align:left; }
+  .score-display { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:3px; color:var(--accent); background:var(--surface2); padding:4px 14px; border-radius:8px; min-width:70px; text-align:center; }
+
+  /* TIP */
+  .tip-section { border-top:1px solid var(--border); padding-top:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .tip-label { font-size:0.8rem; color:var(--muted); white-space:nowrap; }
+  .score-input-group { display:flex; align-items:center; gap:8px; }
+  .score-input { width:50px; text-align:center; padding:8px 6px; background:var(--bg); border:1px solid var(--border); border-radius:7px; color:var(--text); font-family:'Bebas Neue',sans-serif; font-size:1.2rem; transition:border-color .2s; }
+  .score-input:focus { outline:none; border-color:var(--accent); }
+  .score-sep { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--muted); }
+  .tip-saved-badge { display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--accent2); background:rgba(16,185,129,.1); padding:5px 10px; border-radius:6px; }
+  .tip-result { margin-left:auto; font-size:0.8rem; font-weight:600; }
+  .tip-result.correct { color:var(--accent2); }
+  .tip-result.wrong { color:var(--muted); }
+
+  /* ALL TIPS */
+  .all-tips-section { margin-top:12px; border-top:1px solid var(--border); padding-top:10px; }
+  .all-tips-title { font-size:0.75rem; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+  .all-tips-grid { display:flex; flex-wrap:wrap; gap:6px; }
+  .tip-chip { font-size:0.8rem; padding:4px 10px; border-radius:20px; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; gap:5px; }
+  .tip-chip.winner { background:rgba(16,185,129,.15); border-color:var(--accent2); color:var(--accent2); }
+  .tip-chip.me { border-color:var(--accent); }
+  .tip-chip .tip-nick { color:var(--muted); font-size:0.75rem; }
+
+  /* LEADERBOARD */
+  .leaderboard-table { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .lb-row { display:grid; grid-template-columns:44px 1fr 100px 110px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--border); transition:background .15s; }
+  .lb-row:hover { background:var(--surface2); }
+  .lb-row:last-child { border-bottom:none; }
+  .lb-row.header { font-size:0.72rem; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); padding:10px 20px; background:var(--surface2); }
+  .lb-rank { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:var(--muted); }
+  .lb-rank.top1 { color:#fbbf24; }
+  .lb-rank.top2 { color:#94a3b8; }
+  .lb-rank.top3 { color:#b45309; }
+  .lb-name { font-weight:500; }
+  .lb-name.me { color:var(--accent); }
+  .lb-exact { text-align:center; font-size:0.85rem; color:var(--accent2); }
+  .lb-won { text-align:center; font-size:0.9rem; font-weight:600; color:var(--gold); }
+
+  /* PROFILE */
+  .profile-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:28px; max-width:480px; }
+  .profile-card h3 { margin-bottom:20px; font-size:1rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .profile-stat { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+  .profile-stat:last-of-type { border-bottom:none; }
+  .profile-stat-label { color:var(--muted); font-size:0.9rem; }
+  .profile-stat-val { font-weight:600; }
+
+  /* ADMIN */
+  .admin-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:20px; }
+  .admin-card h3 { margin-bottom:16px; font-size:0.9rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .result-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .result-row:last-child { border-bottom:none; }
+  .result-match-name { flex:1; font-size:0.9rem; min-width:150px; }
+
+  /* FORMS */
+  .form-group { margin-bottom:14px; text-align:left; }
+  .form-group label { display:block; font-size:0.8rem; color:var(--muted); margin-bottom:6px; }
+  .form-group input { width:100%; padding:11px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.9rem; transition:border-color .2s; }
+  .form-group input:focus { outline:none; border-color:var(--accent); }
+  .btn { padding:11px 22px; border:none; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:600; font-size:0.9rem; transition:all .2s; }
+  .btn-primary { background:var(--accent); color:#000; }
+  .btn-primary:hover { background:#d97706; }
+  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-danger { background:var(--red); color:#fff; }
+  .btn-sm { padding:7px 14px; font-size:0.8rem; }
+  .btn-full { width:100%; }
+
+  /* FILTER */
+  .filter-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-chip { padding:6px 14px; border-radius:20px; cursor:pointer; font-size:0.8rem; font-weight:500; border:1px solid var(--border); background:var(--surface); color:var(--muted); transition:all .2s; }
+  .filter-chip.active { background:var(--accent); color:#000; border-color:var(--accent); }
+
+  /* TOAST */
+  #toast { position:fixed; bottom:24px; right:24px; z-index:9999; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 18px; font-size:0.85rem; font-weight:500; transform:translateY(80px); opacity:0; transition:all .3s; pointer-events:none; max-width:300px; }
+  #toast.show { transform:translateY(0); opacity:1; }
+  #toast.success { border-color:var(--accent2); color:var(--accent2); }
+  #toast.error { border-color:var(--red); color:#f87171; }
+
+  /* WINNER POPUP */
+  #winnerPopup { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.85); align-items:center; justify-content:center; }
+  #winnerPopup.show { display:flex; }
+  .winner-popup-box { background:linear-gradient(135deg,#14532d,#166534); border:2px solid #16a34a; border-radius:20px; padding:40px; text-align:center; max-width:360px; width:90%; animation:popIn .4s cubic-bezier(.175,.885,.32,1.275); }
+  @keyframes popIn { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .winner-popup-box .emoji { font-size:4rem; display:block; margin-bottom:16px; }
+  .winner-popup-box h2 { font-family:'Bebas Neue',sans-serif; font-size:2rem; color:#fff; letter-spacing:2px; margin-bottom:8px; }
+  .winner-popup-box p { color:#86efac; font-size:1rem; margin-bottom:16px; }
+  .winner-popup-box .amount { font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--gold); }
+
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:1px; margin-bottom:16px; color:var(--text); }
+  .loading-text { text-align:center; color:var(--muted); padding:40px; }
+  .empty-state { text-align:center; padding:48px; color:var(--muted); }
+  .empty-state h3 { font-size:1rem; margin-bottom:8px; color:var(--text); }
+  .group-header { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:1px; color:var(--muted); padding:8px 0 4px; margin-top:4px; }
+
+  @media(max-width:600px) {
+    .lb-row { grid-template-columns:36px 1fr 70px 80px; }
+    .match-teams { gap:6px; }
+    .team-name { font-size:0.85rem; }
+    .jackpot-icon { display:none; }
+    .tab-btn { font-size:0.75rem; padding:8px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- WINNER POPUP -->
+<div id="winnerPopup">
+  <div class="winner-popup-box">
+    <span class="emoji">🏆</span>
+    <h2>JACKPOT!</h2>
+    <p id="winnerPopupText"></p>
+    <div class="amount" id="winnerPopupAmount"></div>
+    <br><br>
+    <button class="btn btn-primary" onclick="document.getElementById('winnerPopup').classList.remove('show')">Zavřít</button>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div id="authSection">
+  <div class="auth-box">
+    <div style="font-size:2.5rem;margin-bottom:12px">⚽</div>
+    <h2>CHANCE LIGA<br><span style="color:var(--text);font-size:1.5rem">Tipovačka</span></h2>
+    <p>Zadej přezdívku a tipuj výsledky!</p>
+    <div class="form-group">
+      <label>Přezdívka</label>
+      <input type="text" id="nicknameInput" placeholder="Např. Honza" maxlength="20"
+        onkeydown="if(event.key==='Enter')enterApp()">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="enterApp()">Vstoupit →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <div class="header-inner">
+      <div class="logo">⚽ CHANCE<span>LIGA</span></div>
+      <div class="header-right">
+        <div id="userInfo"></div>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">Odhlásit</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="winnerBanner">
+      <div class="winner-icon">🏆</div>
+      <div class="winner-text" id="winnerBannerText"></div>
+    </div>
+
+    <div class="jackpot-banner">
+      <div>
+        <div class="jackpot-label">💰 Aktuální jackpot</div>
+        <div class="jackpot-amount" id="jackpotAmount">0 Kč</div>
+        <div class="jackpot-sub">Kumuluje se od poslední výhry · 10 Kč/zápas · Sezona 2025/26</div>
+      </div>
+      <div class="jackpot-icon">🏆</div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('matches',this)">⚽ Zápasy</button>
+      <button class="tab-btn" onclick="switchTab('leaderboard',this)">🏅 Žebříček</button>
+      <button class="tab-btn" onclick="switchTab('profile',this)">👤 Profil</button>
+      <button class="tab-btn" id="adminTabBtn" style="display:none" onclick="switchTab('admin',this)">⚙️ Admin</button>
+    </div>
+
+    <div class="section active" id="matchesSection">
+      <div class="filter-bar">
+        <div class="filter-chip active" onclick="filterMatches('all',this)">Vše</div>
+        <div class="filter-chip" onclick="filterMatches('upcoming',this)">Nadcházející</div>
+        <div class="filter-chip" onclick="filterMatches('live',this)">🔴 Live</div>
+        <div class="filter-chip" onclick="filterMatches('finished',this)">Odehrané</div>
+        <div class="filter-chip" onclick="filterMatches('notipped',this)">Netipováno</div>
+      </div>
+      <div class="matches-grid" id="matchesList">
+        <div class="loading-text">Načítám zápasy…</div>
+      </div>
+    </div>
+
+    <div class="section" id="leaderboardSection">
+      <div class="section-title">Žebříček hráčů</div>
+      <div class="leaderboard-table">
+        <div class="lb-row header">
+          <div>#</div><div>Hráč</div>
+          <div style="text-align:center">Přesné tipy</div>
+          <div style="text-align:center">Výhra</div>
+        </div>
+        <div id="leaderboardList"><div class="loading-text" style="padding:20px">Načítám…</div></div>
+      </div>
+    </div>
+
+    <div class="section" id="profileSection">
+      <div class="section-title">Můj profil</div>
+      <div class="profile-card" id="profileCard"><div class="loading-text">Načítám…</div></div>
+    </div>
+
+    <div class="section" id="adminSection">
+      <div class="admin-card">
+        <h3>⚙️ Zadání výsledků</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Výsledky se načítají automaticky každých 5 minut. Nebo klikni na tlačítko pro okamžitou aktualizaci.</p>
+        <button class="btn btn-secondary btn-sm" onclick="fetchLiveResults()" style="margin-bottom:16px">🔄 Načíst živé výsledky</button>
+        <div id="adminMatchList"><div class="loading-text">Načítám…</div></div>
+      </div>
+      <div class="admin-card">
+        <h3>💰 Jackpot – ruční nastavení</h3>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <input type="number" id="jackpotInput" placeholder="Částka v Kč"
+            style="width:150px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif">
+          <button class="btn btn-secondary" onclick="setJackpot()">Nastavit</button>
+          <button class="btn btn-danger" onclick="resetJackpot()">Reset na 0</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, getDocs, updateDoc,
+         collection, onSnapshot, serverTimestamp, increment, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB8zOYzYAyIW0Syt99lePF9KzHKZafc1n4",
+  authDomain: "ms26-b3d1a.firebaseapp.com",
+  projectId: "ms26-b3d1a",
+  storageBucket: "ms26-b3d1a.firebasestorage.app",
+  messagingSenderId: "678083855699",
+  appId: "1:678083855699:web:5f246809121d292e848da6"
+};
+
+const ADMIN_NICK = "admin";
+const TIP_PRICE  = 10;
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+const MATCHES = [
+  {id:"k29_1",group:"29. kolo",home:"FK Jablonec",    away:"FC Baník Ostrava", date:"2026-04-11T15:00"},
+  {id:"k29_2",group:"29. kolo",home:"Bohemians 1905", away:"FC Zlín",          date:"2026-04-11T15:00"},
+  {id:"k29_3",group:"29. kolo",home:"Slovácko",       away:"Hradec Králové",   date:"2026-04-11T18:00"},
+  {id:"k29_4",group:"29. kolo",home:"MFK Karviná",    away:"Slovan Liberec",   date:"2026-04-12T13:00"},
+  {id:"k29_5",group:"29. kolo",home:"FK Teplice",     away:"AC Sparta Praha",  date:"2026-04-12T15:30"},
+  {id:"k29_6",group:"29. kolo",home:"FK Pardubice",   away:"Sigma Olomouc",    date:"2026-04-12T15:30"},
+  {id:"k29_7",group:"29. kolo",home:"Mladá Boleslav", away:"Dukla Praha",      date:"2026-04-12T15:30"},
+  {id:"k29_8",group:"29. kolo",home:"SK Slavia Praha",away:"Viktoria Plzeň",   date:"2026-04-12T18:30"},
+  {id:"k30_1",group:"30. kolo",home:"FC Baník Ostrava",away:"Bohemians 1905",  date:"2026-04-18T15:00"},
+  {id:"k30_2",group:"30. kolo",home:"FC Zlín",         away:"FK Teplice",      date:"2026-04-18T15:00"},
+  {id:"k30_3",group:"30. kolo",home:"Dukla Praha",     away:"MFK Karviná",     date:"2026-04-18T15:00"},
+  {id:"k30_4",group:"30. kolo",home:"Slovan Liberec",  away:"Mladá Boleslav",  date:"2026-04-18T15:00"},
+  {id:"k30_5",group:"30. kolo",home:"AC Sparta Praha", away:"FK Jablonec",     date:"2026-04-18T18:00"},
+  {id:"k30_6",group:"30. kolo",home:"Sigma Olomouc",   away:"Slovácko",        date:"2026-04-19T13:00"},
+  {id:"k30_7",group:"30. kolo",home:"Hradec Králové",  away:"SK Slavia Praha", date:"2026-04-19T15:30"},
+  {id:"k30_8",group:"30. kolo",home:"Viktoria Plzeň",  away:"FK Pardubice",    date:"2026-04-19T15:30"},
+];
+
+let currentNick  = null;
+let allMatches   = [];
+let myTips       = {};
+let allTips      = {};
+let allUsers     = [];
+let jackpotData  = { amount:0 };
+let prevJpAmount = 0;
+let activeFilter = 'all';
+let unsubs       = [];
+
+// ── AUTH ─────────────────────────────────────────────
+window.enterApp = async () => {
+  const nick = document.getElementById('nicknameInput').value.trim();
+  if (!nick) return toast('Zadej přezdívku!','error');
+  localStorage.setItem('chancetip_nick', nick);
+  await startApp(nick);
+};
+
+async function startApp(nick) {
+  currentNick = nick;
+  const uRef  = doc(db,'users', nick);
+  const uSnap = await getDoc(uRef);
+  if (!uSnap.exists()) {
+    await setDoc(uRef, { name:nick, exactTips:0, totalWon:0, createdAt:serverTimestamp() });
+  }
+  document.getElementById('authSection').style.display   = 'none';
+  document.getElementById('app').style.display           = 'block';
+  document.getElementById('userInfo').innerHTML          = `Ahoj <strong>${nick}</strong>`;
+  if (nick.toLowerCase() === ADMIN_NICK)
+    document.getElementById('adminTabBtn').style.display = '';
+  await seedMatchesIfNeeded();
+  subscribeAll();
+}
+
+window.logout = () => {
+  localStorage.removeItem('chancetip_nick');
+  unsubs.forEach(u=>u()); unsubs = [];
+  currentNick = null; myTips = {}; allTips = {}; allMatches = []; allUsers = [];
+  document.getElementById('authSection').style.display = 'flex';
+  document.getElementById('app').style.display         = 'none';
+  document.getElementById('nicknameInput').value       = '';
+};
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const saved = localStorage.getItem('chancetip_nick');
+  if (saved) { await startApp(saved); }
+  else {
+    document.getElementById('authSection').style.display = 'flex';
+    setTimeout(()=>document.getElementById('nicknameInput').focus(), 100);
+  }
+});
+
+// ── SEED ─────────────────────────────────────────────
+async function seedMatchesIfNeeded() {
+  const snap = await getDoc(doc(db,'meta','seeded_v3'));
+  if (snap.exists()) return;
+  const batch = writeBatch(db);
+  MATCHES.forEach(m => batch.set(doc(db,'matches',m.id),
+    {...m, homeScore:null, awayScore:null, status:'upcoming'}));
+  batch.set(doc(db,'meta','seeded_v3'), {done:true});
+  const jSnap = await getDoc(doc(db,'meta','jackpot'));
+  if (!jSnap.exists())
+    batch.set(doc(db,'meta','jackpot'), {amount:0, lastWinner:null, lastAmount:0, lastWonAt:null});
+  await batch.commit();
+}
+
+// ── SUBSCRIPTIONS ────────────────────────────────────
+function subscribeAll() {
+  unsubs.push(onSnapshot(collection(db,'matches'), snap => {
+    allMatches = snap.docs.map(d=>({...d.data(),id:d.id}))
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    renderMatches();
+  }));
+  unsubs.push(onSnapshot(collection(db,'tips',currentNick,'items'), snap => {
+    myTips = {};
+    snap.docs.forEach(d=>{ myTips[d.id]=d.data(); });
+    renderMatches();
+  }));
+  unsubs.push(onSnapshot(collection(db,'allTips'), snap => {
+    allTips = {};
+    snap.docs.forEach(d => {
+      const data = d.data();
+      allTips[d.id] = data.tips || data; // podporuje oba formáty
+    });
+    renderMatches();
+  }));
+  unsubs.push(onSnapshot(doc(db,'meta','jackpot'), snap => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    // detekuj výhru – jackpot přešel z >0 na 0
+    if (prevJpAmount > 0 && data.amount === 0 && data.lastWinner) {
+      showWinnerPopup(data.lastWinner, data.lastAmount || prevJpAmount);
+    }
+    prevJpAmount = data.amount;
+    jackpotData  = data;
+    document.getElementById('jackpotAmount').textContent = `${data.amount} Kč`;
+    const inp = document.getElementById('jackpotInput');
+    if (inp) inp.value = data.amount;
+    // winner banner
+    if (data.lastWinner) {
+      document.getElementById('winnerBanner').classList.add('show');
+      document.getElementById('winnerBannerText').innerHTML =
+        `<strong>🏆 ${data.lastWinner}</strong> naposledy trefil přesné skóre a vyhrál <strong>${data.lastAmount||0} Kč</strong>!`;
+    }
+  }));
+  unsubs.push(onSnapshot(collection(db,'users'), snap => {
+    allUsers = snap.docs.map(d=>({...d.data(),id:d.id}))
+      .sort((a,b)=>(b.exactTips||0)-(a.exactTips||0));
+    renderLeaderboard();
+  }));
+}
+
+// ── LIVE VÝSLEDKY Z API ──────────────────────────────
+const RAPIDAPI_KEY  = "2d20469f85mshd4dafb41662acb4p119880jsnad51d1b3b4d1";
+const RAPIDAPI_HOST = "free-api-live-football-data.p.rapidapi.com";
+const CHANCE_LIGA_ID = "220";
+
+async function fetchLiveResults() {
+  if (currentNick?.toLowerCase() !== ADMIN_NICK) return;
+  try {
+    const res = await fetch("https://free-api-live-football-data.p.rapidapi.com/football-current-live", {
+      headers: {
+        "x-rapidapi-key":  RAPIDAPI_KEY,
+        "x-rapidapi-host": RAPIDAPI_HOST,
+        "Content-Type": "application/json"
+      }
+    });
+    if (!res.ok) { toast(`API chyba: ${res.status}`, 'error'); return; }
+    const data = await res.json();
+    const fixtures = data?.response || data?.matches || data?.data || data?.events || [];
+    if (!fixtures.length) { toast('Žádné živé zápasy', 'success'); return; }
+
+    let updated = 0;
+    for (const m of allMatches) {
+      const homeLast = m.home.split(" ").pop().toLowerCase();
+      const awayLast = m.away.split(" ").pop().toLowerCase();
+      const match = fixtures.find(f => {
+        const h = (f.teams?.home?.name || f.homeTeam?.name || f.home_team || "").toLowerCase();
+        const a = (f.teams?.away?.name || f.awayTeam?.name || f.away_team || "").toLowerCase();
+        return h.includes(homeLast) && a.includes(awayLast);
+      });
+      if (!match) continue;
+
+      const hs = match.goals?.home ?? match.score?.home ?? match.homeScore ?? null;
+      const as = match.goals?.away ?? match.score?.away ?? match.awayScore ?? null;
+      const statusCode = match.fixture?.status?.short || match.status?.code || match.status || "";
+      const isLive = ["1H","HT","2H","ET","P","LIVE","IN_PLAY"].includes(String(statusCode).toUpperCase());
+      const isDone = ["FT","AET","PEN","FINISHED"].includes(String(statusCode).toUpperCase());
+      const newStatus = isDone ? "finished" : isLive ? "live" : "upcoming";
+
+      const dbMatch = allMatches.find(x => x.id === m.id);
+      if (dbMatch && (dbMatch.homeScore !== hs || dbMatch.awayScore !== as || dbMatch.status !== newStatus)) {
+        await updateDoc(doc(db,'matches', m.id), { homeScore:hs, awayScore:as, status:newStatus });
+        if (newStatus === 'finished' && dbMatch.status !== 'finished' && hs !== null && as !== null) {
+          await evaluateTips(m.id, hs, as);
+        }
+        updated++;
+      }
+    }
+    toast(`Výsledky aktualizovány ✅ (${updated} změn)`, 'success');
+  } catch(e) {
+    console.error('API chyba:', e);
+    toast('Chyba při načítání výsledků', 'error');
+  }
+}
+
+window.fetchLiveResults = fetchLiveResults;
+
+setInterval(() => {
+  if (currentNick?.toLowerCase() === ADMIN_NICK) fetchLiveResults();
+}, 5 * 60 * 1000);
+function renderMatches() {
+  const container = document.getElementById('matchesList');
+  let list = [...allMatches];
+  if (activeFilter==='upcoming') list = list.filter(m=>m.status==='upcoming');
+  else if (activeFilter==='live')     list = list.filter(m=>m.status==='live');
+  else if (activeFilter==='finished') list = list.filter(m=>m.status==='finished');
+  else if (activeFilter==='notipped') list = list.filter(m=>!myTips[m.id]&&m.status!=='finished');
+
+  if (!list.length) {
+    container.innerHTML='<div class="empty-state"><h3>Žádné zápasy</h3><p>Zkus jiný filtr</p></div>';
+    return;
+  }
+
+  let lastGroup = '';
+  container.innerHTML = list.map(m => {
+    const tip      = myTips[m.id];
+    const hasTip   = !!tip;
+    const finished = m.status==='finished';
+    const live     = m.status==='live';
+    const canTip   = !finished && !live;
+
+    let groupHeader = '';
+    if (m.group !== lastGroup) {
+      lastGroup = m.group;
+      groupHeader = `<div class="group-header">${m.group}</div>`;
+    }
+
+    const scoreDisplay = (m.homeScore!==null && m.awayScore!==null)
+      ? `${m.homeScore}:${m.awayScore}` : '–:–';
+
+    let tipResult = '';
+    if (tip && finished && m.homeScore!==null) {
+      if (tip.home===m.homeScore && tip.away===m.awayScore)
+        tipResult = `<div class="tip-result correct">🏆 Jackpot!</div>`;
+      else
+        tipResult = `<div class="tip-result wrong">❌ Tip: ${tip.home}:${tip.away}</div>`;
+    }
+
+    const statusBadge = live
+      ? '<span class="match-status-badge status-live">🔴 LIVE</span>'
+      : finished
+        ? '<span class="match-status-badge status-finished">Odehráno</span>'
+        : '<span class="match-status-badge status-upcoming">Nadcházející</span>';
+
+    const dateStr = new Date(m.date).toLocaleDateString('cs-CZ',
+      {weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+
+    // tipy ostatních – vždy viditelné
+    let allTipsHtml = '';
+    if (allTips[m.id] && Object.keys(allTips[m.id]).length) {
+      const chips = Object.entries(allTips[m.id]).map(([nick,t]) => {
+        const win = finished && m.homeScore!==null && t.home===m.homeScore && t.away===m.awayScore;
+        const isMe = nick === currentNick;
+        return `<div class="tip-chip ${win?'winner':''} ${isMe?'me':''}">
+          <span class="tip-nick">${nick}${isMe?' (já)':''}:</span>
+          <span>${t.home}:${t.away}</span>${win?' 🏆':''}
+        </div>`;
+      }).join('');
+      allTipsHtml = `<div class="all-tips-section">
+        <div class="all-tips-title">👥 Tipy hráčů (${Object.keys(allTips[m.id]).length})</div>
+        <div class="all-tips-grid">${chips}</div>
+      </div>`;
+    }
+
+    return `${groupHeader}
+    <div class="match-card ${hasTip?'has-tip':''} ${finished?'finished':''}" id="card-${m.id}">
+      <div class="match-meta">
+        <span class="match-date">📅 ${dateStr}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="match-group">${m.group}</span>${statusBadge}
+        </div>
+      </div>
+      <div class="match-teams">
+        <div class="team-name team-home">${m.home}</div>
+        <div class="score-display">${scoreDisplay}</div>
+        <div class="team-name team-away">${m.away}</div>
+      </div>
+      <div class="tip-section">
+        ${canTip ? `
+          <span class="tip-label">Můj tip:</span>
+          <div class="score-input-group">
+            <input type="number" class="score-input" id="tip-h-${m.id}" min="0" max="20"
+              value="${tip?tip.home:''}" placeholder="0">
+            <span class="score-sep">:</span>
+            <input type="number" class="score-input" id="tip-a-${m.id}" min="0" max="20"
+              value="${tip?tip.away:''}" placeholder="0">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveTip('${m.id}')">
+            ${hasTip?'✏️ Upravit':'💾 Uložit'}
+          </button>
+          ${hasTip?`<div class="tip-saved-badge">✅ ${tip.home}:${tip.away}</div>`:''}
+        ` : `
+          ${tip?`<div class="tip-saved-badge">Tvůj tip: ${tip.home}:${tip.away}</div>`
+               :'<span class="tip-label" style="color:var(--muted)">Nezatipováno</span>'}
+          ${tipResult}
+        `}
+      </div>
+      ${allTipsHtml}
+    </div>`;
+  }).join('');
+}
+
+window.saveTip = async (matchId) => {
+  const h = parseInt(document.getElementById(`tip-h-${matchId}`)?.value);
+  const a = parseInt(document.getElementById(`tip-a-${matchId}`)?.value);
+  if (isNaN(h)||isNaN(a)||h<0||a<0||h>20||a>20)
+    return toast('Zadej platné skóre (0–20)','error');
+  // ulož do osobních tipů
+  await setDoc(doc(db,'tips',currentNick,'items',matchId),
+    {home:h, away:a, savedAt:serverTimestamp()});
+  // ulož i do sdílené kolekce pro zobrazení ostatním po odehrání
+  await updateDoc(doc(db,'allTips',matchId), { [`tips.${currentNick}`]: {home:h, away:a} })
+    .catch(() => setDoc(doc(db,'allTips',matchId), { tips: { [currentNick]: {home:h, away:a} } }));
+  toast(`Tip ${h}:${a} uložen ✅`,'success');
+};
+
+window.filterMatches = (f,el) => {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderMatches();
+};
+
+// ── JACKPOT ──────────────────────────────────────────
+window.setJackpot = async () => {
+  const val = parseInt(document.getElementById('jackpotInput').value);
+  if (isNaN(val)||val<0) return toast('Neplatná částka','error');
+  await updateDoc(doc(db,'meta','jackpot'), {amount:val});
+  toast(`Jackpot nastaven na ${val} Kč`,'success');
+};
+window.resetJackpot = async () => {
+  await updateDoc(doc(db,'meta','jackpot'), {amount:0});
+  toast('Jackpot resetován','success');
+};
+
+// ── ADMIN ────────────────────────────────────────────
+async function loadAdminMatches() {
+  const snap = await getDocs(collection(db,'matches'));
+  const matches = snap.docs.map(d=>({...d.data(),id:d.id}))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('adminMatchList').innerHTML = matches.map(m=>`
+    <div class="result-row">
+      <div class="result-match-name">${m.home} vs ${m.away}
+        <br><small style="color:var(--muted)">${new Date(m.date).toLocaleDateString('cs-CZ')}</small>
+      </div>
+      <input type="number" id="adm-h-${m.id}" min="0" max="20" value="${m.homeScore??''}" placeholder="D"
+        style="width:46px;text-align:center;padding:7px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1rem">
+      <span style="color:var(--muted);font-family:'Bebas Neue',sans-serif">:</span>
+      <input type="number" id="adm-a-${m.id}" min="0" max="20" value="${m.awayScore??''}" placeholder="H"
+        style="width:46px;text-align:center;padding:7px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1rem">
+      <select id="adm-s-${m.id}"
+        style="padding:7px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.82rem">
+        <option value="upcoming" ${m.status==='upcoming'?'selected':''}>Nadcházející</option>
+        <option value="live"     ${m.status==='live'?'selected':''}>🔴 Live</option>
+        <option value="finished" ${m.status==='finished'?'selected':''}>Odehráno</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="saveResult('${m.id}')">Uložit</button>
+    </div>
+  `).join('');
+}
+
+window.saveResult = async (matchId) => {
+  const hs = parseInt(document.getElementById(`adm-h-${matchId}`)?.value);
+  const as = parseInt(document.getElementById(`adm-a-${matchId}`)?.value);
+  const st = document.getElementById(`adm-s-${matchId}`)?.value;
+  if (isNaN(hs)||isNaN(as)) return toast('Zadej skóre','error');
+  await updateDoc(doc(db,'matches',matchId), {homeScore:hs, awayScore:as, status:st});
+  if (st==='finished') await evaluateTips(matchId, hs, as);
+  toast('Výsledek uložen ✅','success');
+  loadAdminMatches();
+};
+
+async function evaluateTips(matchId, hs, as) {
+  const usersSnap = await getDocs(collection(db,'users'));
+  const jSnap     = await getDoc(doc(db,'meta','jackpot'));
+  const jpAmount  = jSnap.exists() ? (jSnap.data().amount||0) : 0;
+
+  const batch = writeBatch(db);
+  const matchTips = {};
+  let jackpotWinner = null;
+  let tippersCount  = 0;
+
+  for (const uDoc of usersSnap.docs) {
+    const nick   = uDoc.id;
+    const tipDoc = await getDoc(doc(db,'tips',nick,'items',matchId));
+    if (!tipDoc.exists()) continue;
+    const tip = tipDoc.data();
+
+    matchTips[nick] = {home:tip.home, away:tip.away};
+    if (!tip.processed) tippersCount++;
+
+    if (!tip.processed && tip.home===hs && tip.away===as) {
+      if (!jackpotWinner) jackpotWinner = nick;
+      batch.update(doc(db,'users',nick), { exactTips:increment(1), totalWon:increment(jpAmount) });
+    }
+    if (!tip.processed) {
+      batch.update(doc(db,'tips',nick,'items',matchId), {processed:true});
+    }
+  }
+
+  // uložit tipy pro zobrazení – jako jeden dokument s polem tips
+  batch.set(doc(db,'allTips',matchId), { tips: matchTips, matchId, savedAt: serverTimestamp() });
+
+  // jackpot update
+  if (jackpotWinner) {
+    batch.update(doc(db,'meta','jackpot'), {
+      amount:0, lastWinner:jackpotWinner,
+      lastAmount:jpAmount, lastWonAt:serverTimestamp()
+    });
+  } else if (tippersCount > 0) {
+    batch.update(doc(db,'meta','jackpot'), {
+      amount:increment(tippersCount * TIP_PRICE)
+    });
+  }
+
+  await batch.commit();
+}
+
+// ── WINNER POPUP ─────────────────────────────────────
+function showWinnerPopup(nick, amount) {
+  document.getElementById('winnerPopupText').textContent  = `${nick} trefil přesné skóre!`;
+  document.getElementById('winnerPopupAmount').textContent = `${amount} Kč`;
+  document.getElementById('winnerPopup').classList.add('show');
+}
+
+// ── LEADERBOARD ──────────────────────────────────────
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboardList');
+  if (!allUsers.length) {
+    list.innerHTML='<div class="empty-state">Zatím žádní hráči</div>'; return;
+  }
+  list.innerHTML = allUsers.map((u,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank ${i===0?'top1':i===1?'top2':i===2?'top3':''}">${i+1}</div>
+      <div class="lb-name ${u.id===currentNick?'me':''}">${u.name}${u.id===currentNick?' 👈':''}</div>
+      <div class="lb-exact">${u.exactTips||0}× 🎯</div>
+      <div class="lb-won">${u.totalWon||0} Kč</div>
+    </div>
+  `).join('');
+}
+
+// ── PROFILE ──────────────────────────────────────────
+async function loadProfile() {
+  const snap = await getDoc(doc(db,'users',currentNick));
+  const u = snap.exists() ? snap.data() : {};
+  document.getElementById('profileCard').innerHTML = `
+    <h3>Statistiky</h3>
+    <div class="profile-stat">
+      <span class="profile-stat-label">Přezdívka</span>
+      <span class="profile-stat-val">${currentNick}</span>
+    </div>
+    <div class="profile-stat">
+      <span class="profile-stat-label">Přesně trefená skóre</span>
+      <span class="profile-stat-val" style="color:var(--accent2)">${u.exactTips||0}× 🎯</span>
+    </div>
+    <div class="profile-stat">
+      <span class="profile-stat-label">Celková výhra</span>
+      <span class="profile-stat-val" style="color:var(--gold)">${u.totalWon||0} Kč 🏆</span>
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Odhlásit se</button>
+    </div>
+  `;
+}
+
+// ── TABS ─────────────────────────────────────────────
+window.switchTab = (tab, btn) => {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(tab+'Section').classList.add('active');
+  btn.classList.add('active');
+  if (tab==='profile') loadProfile();
+  if (tab==='admin')   loadAdminMatches();
+};
+
+// ── TOAST ────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  setTimeout(()=>{ t.className=''; }, 3500);
+}
+window.toast = toast;
+</script>
+</body>
+</html>
